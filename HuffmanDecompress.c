@@ -172,7 +172,6 @@ char readNextBit(FILE *data, unsigned char *current_byte, long *current_bit, con
         fread(current_byte, sizeof(char), 1, data);
     }
     (*current_bit)++;
-    printf("%d", bit);
     return bit;
 }
 

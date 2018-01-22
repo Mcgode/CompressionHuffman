@@ -9,7 +9,6 @@ void writeByte(FILE *file, EncodedBytes *encoded_byte, unsigned char *current_wr
     long base_byte_index = *total_bit_size % 8;
     for (int i = 0; i < encoded_byte->level; i++) {
         unsigned char bit = (unsigned char)((encoded_byte->code >> i) % 2);
-        printf("%d", bit);
         *current_write_byte += bit << base_byte_index;
         base_byte_index++;
         if (base_byte_index >= 8) {

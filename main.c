@@ -1,26 +1,32 @@
 #include <stdio.h>
+#include <math.h>
 #include "HuffmanTable.h"
 #include "HuffmanCompress.h"
 #include "HuffmanDecompress.h"
 
-#ifdef _WIN32
-    #define FILENAME "C:\\Users\\Max Godefroy\\Developer\\C\\C_Training\\CompressionHuffman\\test.txt"
-    #define COMPRESSED_FILENAME "C:\\Users\\Max Godefroy\\Developer\\C\\C_Training\\CompressionHuffman\\test.comp"
-    #define DECOMPRESSED_FILENAME "C:\\Users\\Max Godefroy\\Developer\\C\\C_Training\\CompressionHuffman\\test-d.txt"
-#elif __APPLE__
-    #define FILENAME "/Users/max/Developer/C/C_Training/CompressionHuffman/test.txt"
-    #define COMPRESSED_FILENAME "/Users/max/Developer/C/C_Training/CompressionHuffman/test.comp"
-    #define DECOMPRESSED_FILENAME "/Users/max/Developer/C/C_Training/CompressionHuffman/test-d.txt"
-#endif
-
 void countBytesOccurences(int *occurences, FILE *file, int *letter_count);
 void getProbabilities(double probabilities[], int total, const int occurences[]);
+double entropy(const double probabilities[]);
+double averageLength(EncodedBytesArray *encoded_bytes, const double probabilities[]);
 
-int main() {
+int main(int argc, char *argv[]) {
 
-    FILE *file = fopen(FILENAME, "rb");
+    if (argc < 4) { perror("Not enough arguments were given"); exit(EXIT_FAILURE); }
+
+    if (strlen(argv[1]) == 0) { perror("No filename was given"); exit(EXIT_FAILURE); }
+    char *filename = argv[1];
+
+    if (strlen(argv[2]) == 0) { perror("No compressed filename was given"); exit(EXIT_FAILURE); }
+    char *compressed_filename = argv[2];
+
+    if (strlen(argv[3]) == 0) { perror("No decompressed filename was given"); exit(EXIT_FAILURE); }
+    char *decompressed_filename = argv[3];
+
+    printf("Filename: %s\n", filename);
+
+    FILE *file = fopen(filename, "rb");
     if( file == NULL ) {
-        perror(FILENAME);
+        perror(filename);
         return EXIT_FAILURE;
     }
 
@@ -31,6 +37,8 @@ int main() {
     static double probabilities[256];
     getProbabilities(probabilities, bytes_count, occurences);
 
+    printf("Entropy H(X) = %f\n", entropy(probabilities));
+
     HuffmanTable huffman_table = makeHuffmanTable(probabilities);
     printf("HuffmanTable address: %p\n", &huffman_table);
     printf("Table size: %d\n", huffman_table.size);
@@ -38,6 +46,7 @@ int main() {
     arrangeHuffmanTable(&huffman_table);
 
     EncodedBytesArray encoded_bytes = encodeHuffmanTable(&huffman_table, different_letters);
+    printf("Average length ν = %f\n", averageLength(&encoded_bytes, probabilities));
     for (int i = 0; i < encoded_bytes.size; i++)
     {
         printf("%x: ", encoded_bytes.array[i].value);
@@ -49,17 +58,17 @@ int main() {
         printf("\n");
     }
 
-    compressData(file, &encoded_bytes, COMPRESSED_FILENAME);
+    compressData(file, &encoded_bytes, compressed_filename);
 
     fclose(file);
 
-    FILE *compressed_file = fopen(COMPRESSED_FILENAME, "rb");
+    FILE *compressed_file = fopen(compressed_filename, "rb");
     if( compressed_file == NULL ) {
-        perror(COMPRESSED_FILENAME);
+        perror(compressed_filename);
         return EXIT_FAILURE;
     }
 
-    decompressData(compressed_file, DECOMPRESSED_FILENAME);
+    decompressData(compressed_file, decompressed_filename);
 
     fclose(compressed_file);
 
@@ -89,5 +98,24 @@ void getProbabilities(double probabilities[], int total, const int occurences[])
     for (int i = 0; i < 256; i++) {
         probabilities[i] = (double)occurences[i] / (double)total;
     }
+}
+
+double entropy(const double probabilities[]) {
+    double total = 0;
+    for (int i = 0; i < 256; i++) {
+        if (probabilities[i] > 0) {
+            total += - probabilities[i] * log2(probabilities[i]);
+        }
+    }
+    return total;
+}
+
+double averageLength(EncodedBytesArray *encoded_bytes, const double probabilities[]) {
+    double total = 0;
+    for (int i = 0; i < encoded_bytes->size; i++) {
+        double probability = probabilities[encoded_bytes->array[i].value];
+        total += probability * (double)(encoded_bytes->array[i].level);
+    }
+    return total;
 }
 
