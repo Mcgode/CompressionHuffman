@@ -7,3 +7,7 @@ cmake-build-debug/*
 # No test products
 *.comp
 *.txt
+*.bmp
+*.png
+*.jpg
+*.gif
