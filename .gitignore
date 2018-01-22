@@ -1,6 +1,9 @@
+# No hidden files
 .*
 
+# No CMake debug garbage
 cmake-build-debug/*
 
+# No test products
 *.comp
 *.txt
